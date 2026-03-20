@@ -1,0 +1,128 @@
+#!/bin/bash
+# op-env-scan: Pre-commit scanner that detects leaked 1Password secret values
+# Resolves secrets from .env.tpl (same mechanism as op-env), then checks
+# staged git files for any accidentally hardcoded secret values.
+# Usage: op-env-scan [--tpl /path/to/template] [--install-hook]
+
+set -euo pipefail
+
+MIN_SECRET_LENGTH=8
+
+# --- Flag parsing -----------------------------------------------------------
+
+INSTALL_HOOK=0
+
+while true; do
+  case "${1:-}" in
+    --tpl)
+      [ -n "${2:-}" ] || { echo "op-env-scan: --tpl requires an argument" >&2; exit 1; }
+      TPL="$2"
+      shift 2
+      ;;
+    --install-hook)
+      INSTALL_HOOK=1
+      shift
+      ;;
+    *)
+      break
+      ;;
+  esac
+done
+
+# Default template path if --tpl was not provided
+TPL="${TPL:-${OP_ENV_TPL:-${HOME}/.claude/.env.tpl}}"
+
+# --- Install hook mode -------------------------------------------------------
+
+if [ "$INSTALL_HOOK" -eq 1 ]; then
+  GIT_DIR=$(git rev-parse --git-dir 2>/dev/null) || {
+    echo "op-env-scan: not a git repository" >&2
+    exit 1
+  }
+  HOOK_PATH="${GIT_DIR}/hooks/pre-commit"
+
+  HOOK_LINE="op-env-scan"
+
+  # Check if hook already contains our line
+  if [ -f "$HOOK_PATH" ] && grep -qF "$HOOK_LINE" "$HOOK_PATH"; then
+    echo "op-env-scan: pre-commit hook already installed" >&2
+    exit 0
+  fi
+
+  # Create or append
+  if [ ! -f "$HOOK_PATH" ]; then
+    cat > "$HOOK_PATH" <<'EOF'
+#!/bin/bash
+op-env-scan
+EOF
+    chmod +x "$HOOK_PATH"
+    echo "op-env-scan: created pre-commit hook at ${HOOK_PATH}" >&2
+  else
+    printf '\n# op-env secret scan\nop-env-scan\n' >> "$HOOK_PATH"
+    echo "op-env-scan: appended to existing pre-commit hook at ${HOOK_PATH}" >&2
+  fi
+  exit 0
+fi
+
+# --- Scan mode ---------------------------------------------------------------
+
+if [ ! -f "$TPL" ]; then
+  echo "op-env-scan: template not found: $TPL" >&2
+  exit 1
+fi
+
+# Get key names from template (skip comments and blank lines)
+mapfile -t EXPECTED_KEYS < <(grep -v '^#' "$TPL" | grep -v '^$' | cut -d= -f1)
+
+# Build pipe-separated pattern for grep
+KEYS_PATTERN=$(printf '%s|' "${EXPECTED_KEYS[@]}")
+KEYS_PATTERN="${KEYS_PATTERN%|}"
+
+# Resolve secrets via op (same mechanism as op-env)
+declare -A SECRETS
+while IFS='=' read -r key value; do
+  [ -n "$value" ] || continue
+  SECRETS["$key"]="$value"
+done < <(op run --no-masking --env-file "$TPL" -- env 2>/dev/null | grep -E "^($KEYS_PATTERN)=")
+
+SECRET_COUNT="${#SECRETS[@]}"
+
+# Get staged files
+mapfile -t STAGED_FILES < <(git diff --cached --diff-filter=ACM --name-only 2>/dev/null)
+STAGED_COUNT="${#STAGED_FILES[@]}"
+
+if [ "$STAGED_COUNT" -eq 0 ]; then
+  echo "op-env-scan: ${SECRET_COUNT} secrets checked against 0 staged files. No leaks found." >&2
+  exit 0
+fi
+
+# Scan each staged file for each secret value
+BLOCKED=0
+
+for key in "${!SECRETS[@]}"; do
+  value="${SECRETS[$key]}"
+
+  # Skip short values to avoid false positives
+  if [ "${#value}" -lt "$MIN_SECRET_LENGTH" ]; then
+    continue
+  fi
+
+  for file in "${STAGED_FILES[@]}"; do
+    # Skip binary files and non-existent files
+    [ -f "$file" ] || continue
+
+    if matches=$(grep -n -F -- "$value" "$file" 2>/dev/null); then
+      while IFS=: read -r line_number _; do
+        echo "BLOCKED: Secret value for ${key} found in ${file}:${line_number}" >&2
+        BLOCKED=$((BLOCKED + 1))
+      done <<< "$matches"
+    fi
+  done
+done
+
+if [ "$BLOCKED" -gt 0 ]; then
+  exit 1
+fi
+
+echo "op-env-scan: ${SECRET_COUNT} secrets checked against ${STAGED_COUNT} staged files. No leaks found." >&2
+exit 0
