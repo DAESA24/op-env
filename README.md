@@ -1,6 +1,6 @@
 # op-env
 
-A 17-line bash wrapper that injects 1Password secrets into interactive CLI tools — without writing secrets to disk or breaking terminal interactivity.
+A small bash wrapper that injects 1Password secrets into interactive CLI tools — without writing secrets to disk or breaking terminal interactivity.
 
 Built for AI coding agents (Claude Code, Cursor, Aider) that need API keys at runtime but also need a real terminal (TTY) to function.
 
