@@ -1,8 +1,8 @@
 # op-env
 
-A small bash wrapper that injects 1Password secrets into interactive CLI tools — without writing secrets to disk or breaking terminal interactivity.
+A lightweight infrastructure CLI in bash for 1Password secret management — injects secrets into interactive tools without writing them to disk or breaking terminal interactivity.
 
-Built for AI coding agents (Claude Code, Cursor, Aider) that need API keys at runtime but also need a real terminal (TTY) to function.
+Built for AI coding agents (Claude Code, Cursor, Aider) that need API keys at runtime but also need a real terminal (TTY) to function. Includes secret validation, diagnostic tooling, and pre-commit leak scanning.
 
 ## About me
 
