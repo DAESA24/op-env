@@ -4,9 +4,9 @@ A 17-line bash wrapper that injects 1Password secrets into interactive CLI tools
 
 Built for AI coding agents (Claude Code, Cursor, Aider) that need API keys at runtime but also need a real terminal (TTY) to function.
 
-## About the author
+## About me
 
-I'm a [PAI](https://github.com/danielmiessler/PAI) user learning AI engineering, not a seasoned developer, systems engineer, or security expert. I built this to solve a real problem in my own setup — I needed API keys available to Claude Code without putting secrets in `.env` files, dotfiles, or anywhere on disk — and the standard approaches (`op run`, env exports, dotenv) all had deal-breaking limitations for interactive TUI applications.
+My name is Drew and I'm a [PAI](https://github.com/danielmiessler/PAI) user learning AI engineering, not a seasoned developer, systems engineer, or security expert. I built this to solve a real problem in my own setup — I needed API keys available to Claude Code without putting secrets in `.env` files, dotfiles, or anywhere on disk — and the standard approaches (`op run`, env exports, dotenv) all had deal-breaking limitations for interactive TUI applications.
 
 I figured it was worth sharing because the problem is common and the solution is small enough to understand in a few minutes. If you see ways to improve it — or if I'm doing something fundamentally wrong from a security perspective — I'd genuinely appreciate the feedback. The PAI community and the broader developer community have far more experience than I do, and I'm here to learn.
 
