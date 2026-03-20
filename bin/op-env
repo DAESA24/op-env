@@ -2,12 +2,13 @@
 # op-env: Load 1Password secrets and exec command with TTY preserved
 # Resolves all op:// references from .env.tpl in one call, exports them,
 # then exec's the given command so TTY passthrough works for interactive apps.
-# Usage: op-env [--tpl /path/to/template] [--check] [-q|--quiet] <command> [args...]
+# Usage: op-env [--tpl /path/to/template] [--check] [--partial] [-q|--quiet] <command> [args...]
 
 CHECK=0
 QUIET=0
+PARTIAL=0
 
-# Parse flags: --tpl, --check, -q/--quiet (order-independent)
+# Parse flags: --tpl, --check, --partial, -q/--quiet (order-independent)
 while true; do
   case "${1:-}" in
     --tpl)
@@ -17,6 +18,10 @@ while true; do
       ;;
     --check)
       CHECK=1
+      shift
+      ;;
+    --partial)
+      PARTIAL=1
       shift
       ;;
     -q|--quiet)
@@ -77,9 +82,35 @@ while IFS='=' read -r key value; do
   export "$key=$value"
 done <<< "$RESOLVED_OUTPUT"
 
+# Validate: check for missing keys
+MISSING=()
+for key in "${EXPECTED_KEYS[@]}"; do
+  val="${!key:-}"
+  if [ -z "$val" ]; then
+    MISSING+=("$key")
+  fi
+done
+
 # Print summary to stderr unless --quiet/-q
 if [ "$QUIET" -eq 0 ]; then
-  echo "op-env: ${RESOLVED}/${TOTAL} secrets resolved" >&2
+  if [ ${#MISSING[@]} -gt 0 ]; then
+    echo "op-env: ${RESOLVED}/${TOTAL} secrets resolved. ${#MISSING[@]} missing." >&2
+  else
+    echo "op-env: ${RESOLVED}/${TOTAL} secrets resolved" >&2
+  fi
+fi
+
+# If any keys missing, print each and abort (unless --partial)
+if [ ${#MISSING[@]} -gt 0 ]; then
+  for key in "${MISSING[@]}"; do
+    echo "op-env: MISSING — $key" >&2
+  done
+  if [ "$PARTIAL" -eq 0 ]; then
+    echo "op-env: aborting. Use --partial to launch with missing secrets." >&2
+    exit 1
+  else
+    echo "op-env: WARNING — launching with ${#MISSING[@]} missing secret(s)" >&2
+  fi
 fi
 
 exec "$@"
