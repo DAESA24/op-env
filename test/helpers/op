@@ -1,0 +1,55 @@
+#!/bin/bash
+# Mock op CLI — simulates `op run --no-masking --env-file TPL -- env`
+# Outputs realistic env output mixed with mock values for template keys.
+# Set MOCK_OP_SKIP_KEYS to a comma-separated list of keys to omit (simulates missing).
+# Set MOCK_OP_FAIL=1 to simulate op failure (no output).
+
+# Find the --env-file argument
+TPL=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --env-file) TPL="$2"; shift 2 ;;
+    --) shift; break ;;
+    *) shift ;;
+  esac
+done
+
+# If told to fail, output nothing
+if [ "${MOCK_OP_FAIL:-0}" = "1" ]; then
+  exit 0
+fi
+
+# Simulate the command after -- (which is `env`)
+# Output realistic env vars (like real `env` would)
+echo "HOME=/home/runner"
+echo "USER=runner"
+echo "PATH=/usr/local/bin:/usr/bin:/bin"
+echo "SHELL=/bin/bash"
+echo "LANG=en_US.UTF-8"
+echo "TERM=xterm-256color"
+echo "PWD=/tmp/test"
+echo "SHLVL=1"
+echo "LOGNAME=runner"
+echo "LC_ALL=en_US.UTF-8"
+for i in $(seq 1 30); do
+  echo "DUMMY_VAR_${i}=dummy_value_${i}"
+done
+
+# Parse skip list
+SKIP_KEYS=",${MOCK_OP_SKIP_KEYS:-},"
+
+# Output mock values for template keys
+if [ -n "$TPL" ] && [ -f "$TPL" ]; then
+  while IFS= read -r line; do
+    case "$line" in
+      \#*|"") continue ;;
+    esac
+    key=$(echo "$line" | cut -d= -f1)
+    # Skip keys in the skip list
+    if echo "$SKIP_KEYS" | grep -qF ",$key,"; then
+      continue
+    fi
+    # Generate deterministic mock value
+    echo "${key}=mock_${key}_value_12345678"
+  done < "$TPL"
+fi
