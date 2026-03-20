@@ -1,0 +1,8 @@
+# Never commit real secret templates
+*.env
+*.env.*
+!*.env.example
+.env.tpl
+
+# macOS
+.DS_Store

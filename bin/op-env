@@ -1,0 +1,17 @@
+#!/bin/bash
+# op-env: Load 1Password secrets and exec command with TTY preserved
+# Resolves all op:// references from .env.tpl in one call, exports them,
+# then exec's the given command so TTY passthrough works for interactive apps.
+# Usage: op-env <command> [args...]
+
+TPL="${HOME}/.claude/.env.tpl"
+
+# Get key names from template (skip comments and blank lines)
+KEYS=$(grep -v '^#' "$TPL" | grep -v '^$' | cut -d= -f1 | tr '\n' '|' | sed 's/|$//')
+
+# Resolve all secrets in one op call, extract only our keys, export them
+while IFS='=' read -r key value; do
+  export "$key=$value"
+done < <(op run --no-masking --env-file "$TPL" -- env 2>/dev/null | grep -E "^($KEYS)=")
+
+exec "$@"
