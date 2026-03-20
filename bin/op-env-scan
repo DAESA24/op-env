@@ -1,0 +1,101 @@
+#!/bin/bash
+# op-env-scan: Scan staged git files for leaked secret values
+# Resolves secrets from the template, then checks staged files for matches.
+# Use as a pre-commit hook to catch accidentally hardcoded secrets.
+# Usage: op-env-scan [--tpl /path/to/template] [--install-hook]
+
+# Template path: --tpl flag > OP_ENV_TPL env var > default
+INSTALL_HOOK=false
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --tpl)
+      TPL="$2"
+      shift 2
+      ;;
+    --install-hook)
+      INSTALL_HOOK=true
+      shift
+      ;;
+    *)
+      break
+      ;;
+  esac
+done
+TPL="${TPL:-${OP_ENV_TPL:-${HOME}/.claude/.env.tpl}}"
+
+if [ ! -f "$TPL" ]; then
+  echo "op-env-scan: template not found: $TPL" >&2
+  exit 1
+fi
+
+# Handle --install-hook: append to .git/hooks/pre-commit without clobbering
+if [ "$INSTALL_HOOK" = true ]; then
+  hook_dir="$(git rev-parse --git-dir 2>/dev/null)/hooks"
+  if [ ! -d "$hook_dir" ]; then
+    echo "op-env-scan: not a git repository (no .git/hooks found)" >&2
+    exit 1
+  fi
+  hook_file="$hook_dir/pre-commit"
+  # Check if already installed
+  if [ -f "$hook_file" ] && grep -q 'op-env-scan' "$hook_file"; then
+    echo "op-env-scan: already installed in $hook_file" >&2
+    exit 0
+  fi
+  # Append (don't clobber existing hooks)
+  if [ ! -f "$hook_file" ]; then
+    echo '#!/bin/bash' > "$hook_file"
+  fi
+  {
+    echo ''
+    echo '# op-env-scan: check for leaked secret values in staged files'
+    echo 'op-env-scan'
+  } >> "$hook_file"
+  chmod +x "$hook_file"
+  echo "op-env-scan: installed as pre-commit hook in $hook_file" >&2
+  exit 0
+fi
+
+# Get staged files (only added, copied, modified — not deleted)
+mapfile -t STAGED_FILES < <(git diff --cached --diff-filter=ACM --name-only 2>/dev/null)
+if [ ${#STAGED_FILES[@]} -eq 0 ]; then
+  echo "op-env-scan: no staged files to scan" >&2
+  exit 0
+fi
+
+# Resolve secrets from template (same mechanism as op-env)
+RESOLVED=$(op run --no-masking --env-file "$TPL" -- env 2>/dev/null)
+mapfile -t EXPECTED_KEYS < <(grep -v '^#' "$TPL" | grep -v '^$' | cut -d= -f1)
+
+# Scan staged files for each resolved secret value
+LEAK_COUNT=0
+SECRETS_CHECKED=0
+for key in "${EXPECTED_KEYS[@]}"; do
+  value=$(echo "$RESOLVED" | grep -m1 "^${key}=" | cut -d= -f2-)
+  # Skip empty values and short values (< 8 chars) to avoid false positives
+  if [ -z "$value" ] || [ ${#value} -lt 8 ]; then
+    continue
+  fi
+  SECRETS_CHECKED=$((SECRETS_CHECKED + 1))
+  for file in "${STAGED_FILES[@]}"; do
+    # Skip binary files
+    if ! git diff --cached --diff-filter=ACM -p -- "$file" | head -1 | grep -q 'diff --git'; then
+      continue
+    fi
+    matches=$(git show ":${file}" 2>/dev/null | grep -n -F "$value" || true)
+    if [ -n "$matches" ]; then
+      while IFS= read -r match; do
+        line_num=$(echo "$match" | cut -d: -f1)
+        echo "BLOCKED: Secret value for $key found in $file:$line_num" >&2
+        LEAK_COUNT=$((LEAK_COUNT + 1))
+      done <<< "$matches"
+    fi
+  done
+done
+
+if [ "$LEAK_COUNT" -gt 0 ]; then
+  echo "op-env-scan: $LEAK_COUNT leak(s) detected. Commit blocked." >&2
+  exit 1
+fi
+
+echo "op-env-scan: $SECRETS_CHECKED secrets checked against ${#STAGED_FILES[@]} staged files. No leaks found." >&2
+exit 0
