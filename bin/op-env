@@ -2,17 +2,22 @@
 # op-env: Load 1Password secrets and exec command with TTY preserved
 # Resolves all op:// references from .env.tpl in one call, exports them,
 # then exec's the given command so TTY passthrough works for interactive apps.
-# Usage: op-env [--tpl /path/to/template] [-q|--quiet] <command> [args...]
+# Usage: op-env [--tpl /path/to/template] [--check] [-q|--quiet] <command> [args...]
 
+CHECK=0
 QUIET=0
 
-# Parse flags: --tpl and -q/--quiet (order-independent)
+# Parse flags: --tpl, --check, -q/--quiet (order-independent)
 while true; do
   case "${1:-}" in
     --tpl)
       [ -n "${2:-}" ] || { echo "op-env: --tpl requires an argument" >&2; exit 1; }
       TPL="$2"
       shift 2
+      ;;
+    --check)
+      CHECK=1
+      shift
       ;;
     -q|--quiet)
       QUIET=1
@@ -40,14 +45,37 @@ TOTAL=${#EXPECTED_KEYS[@]}
 KEYS_PATTERN=$(printf '%s|' "${EXPECTED_KEYS[@]}")
 KEYS_PATTERN="${KEYS_PATTERN%|}"
 
-# Resolve all secrets in one op call, extract only our keys, export them
+# Resolve all secrets in one op call, extract only our keys
+RESOLVED_OUTPUT=$(op run --no-masking --env-file "$TPL" -- env 2>/dev/null | grep -E "^($KEYS_PATTERN)=")
+
+# Check mode: print per-key status with safe preview, then exit
+if [ "$CHECK" = 1 ]; then
+  SET=0
+  for key in "${EXPECTED_KEYS[@]}"; do
+    value=$(echo "$RESOLVED_OUTPUT" | grep -m1 "^${key}=" | cut -d= -f2-)
+    if [ -n "$value" ]; then
+      preview="${value:0:2}..."
+      echo "${key}: set (${preview})"
+      SET=$((SET + 1))
+    else
+      echo "${key}: MISSING"
+    fi
+  done
+  echo "op-env: ${SET}/${TOTAL} secrets resolved from ${TPL}"
+  if [ "$SET" -lt "$TOTAL" ]; then
+    exit 1
+  fi
+  exit 0
+fi
+
+# Normal mode: export resolved secrets
 RESOLVED=0
 while IFS='=' read -r key value; do
   if [ -n "$value" ]; then
     RESOLVED=$((RESOLVED + 1))
   fi
   export "$key=$value"
-done < <(op run --no-masking --env-file "$TPL" -- env 2>/dev/null | grep -E "^($KEYS_PATTERN)=")
+done <<< "$RESOLVED_OUTPUT"
 
 # Print summary to stderr unless --quiet/-q
 if [ "$QUIET" -eq 0 ]; then
