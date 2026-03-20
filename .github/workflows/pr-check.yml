@@ -18,16 +18,23 @@ jobs:
 
       - name: "B1: No secret exfiltration patterns"
         run: |
+          # Extract only added code lines (not diff headers, not comments)
+          added_code=$(git diff origin/main --unified=0 -- 'bin/*' | grep '^\+' | grep -v '^\+\+\+' | grep -v '^\+\s*#' || true)
+          if [ -z "$added_code" ]; then
+            echo "B1 PASS — No added code lines to check"
+            exit 0
+          fi
           patterns='(>>?\s|tee\s|mktemp|curl\s|wget\s|nc\s|ncat\s)'
-          if git diff origin/main --unified=0 -- 'bin/*' | grep -P "$patterns"; then
-            echo "::error::B1 FAIL — Potential secret exfiltration pattern detected in diff"
+          if echo "$added_code" | grep -P "$patterns"; then
+            echo "::error::B1 FAIL — Potential secret exfiltration pattern detected in added code"
             exit 1
           fi
           value_patterns='(echo.*\$\{?value|printf.*\$\{?value|>\s.*\$\{?value)'
-          if git diff origin/main --unified=0 -- 'bin/*' | grep -P "$value_patterns"; then
+          if echo "$added_code" | grep -P "$value_patterns"; then
             echo "::error::B1 FAIL — Possible secret value written to output or file"
             exit 1
           fi
+          echo "B1 PASS — No exfiltration patterns in added code"
 
       - name: "B2: TTY preservation (exec is last happy-path line)"
         run: |
