@@ -13,6 +13,12 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: "Tests"
+        run: |
+          chmod +x test/helpers/op test/helpers/check-env.sh
+          export PATH="$PWD/test/helpers:$PATH"
+          bash test/test-op-env.sh
+
       - name: "Initialize results"
         run: |
           echo "## PR Review Results" > /tmp/review-results.md
