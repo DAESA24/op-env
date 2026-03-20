@@ -2,7 +2,11 @@
 
 ## 2026-03-20
 
-- Configurable template path via `--tpl` flag and `OP_ENV_TPL` env var (PR #6)
+- Fail-closed validation: aborts if any secrets fail to resolve, `--partial` to override (PR #12, Issue #1)
+- Dry-run status check via `--check` flag with safe 2-char previews (PR #8, Issue #2)
+- Pre-commit secret scanning via `op-env-scan` companion script (PR #11, Issue #3)
+- Configurable template path via `--tpl` flag and `OP_ENV_TPL` env var (PR #6, Issue #4)
+- Secret count reporting on launch, `--quiet` to suppress (PR #9, Issue #5)
 - File-existence guard exits with clear error if template not found
 - Added PR review framework v1.1: shellcheck + exfiltration checks + TTY verification in CI
 - PR review results posted as comments on every PR (pass and fail)

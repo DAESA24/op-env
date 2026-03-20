@@ -53,35 +53,21 @@ op vault list --format=json | jq '.[] | {id, name}'
 op item list --vault <vault-uuid> --format=json | jq '.[] | {id, title}'
 ```
 
-## The script
+## Features
 
-The entire tool is a small bash script:
+| Feature | Flag | Description |
+|---------|------|-------------|
+| Secret injection | *(default)* | Resolves secrets, exports as env vars, execs target command with TTY |
+| Configurable template | `--tpl /path` | Override template path (also via `OP_ENV_TPL` env var) |
+| Validation | *(default)* | Aborts if any secrets fail to resolve (fail-closed) |
+| Partial launch | `--partial` | Allow launching with missing secrets (prints warning) |
+| Status check | `--check` | Show per-key resolution status with safe 2-char preview, then exit |
+| Count reporting | *(default)* | Prints `op-env: 7/7 secrets resolved` to stderr on launch |
+| Quiet mode | `-q` / `--quiet` | Suppress the count summary |
+| Leak scanning | `op-env-scan` | Companion script — scans staged git files for hardcoded secrets |
+| Hook install | `op-env-scan --install-hook` | Wire leak scanning into git pre-commit hook |
 
-```bash
-#!/bin/bash
-# Template path: --tpl flag > OP_ENV_TPL env var > default
-if [ "$1" = "--tpl" ] && [ -n "$2" ]; then
-  TPL="$2"
-  shift 2
-else
-  TPL="${OP_ENV_TPL:-${HOME}/.claude/.env.tpl}"
-fi
-
-if [ ! -f "$TPL" ]; then
-  echo "op-env: template not found: $TPL" >&2
-  exit 1
-fi
-
-KEYS=$(grep -v '^#' "$TPL" | grep -v '^$' | cut -d= -f1 | tr '\n' '|' | sed 's/|$//')
-
-while IFS='=' read -r key value; do
-  export "$key=$value"
-done < <(op run --no-masking --env-file "$TPL" -- env 2>/dev/null | grep -E "^($KEYS)=")
-
-exec "$@"
-```
-
-No dependencies beyond bash and the 1Password CLI. The template path defaults to `~/.claude/.env.tpl` but can be overridden with `--tpl /path/to/template` or the `OP_ENV_TPL` environment variable.
+No dependencies beyond bash, the 1Password CLI, and git (for scanning).
 
 ## Security model
 
