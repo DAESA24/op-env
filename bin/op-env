@@ -2,15 +2,30 @@
 # op-env: Load 1Password secrets and exec command with TTY preserved
 # Resolves all op:// references from .env.tpl in one call, exports them,
 # then exec's the given command so TTY passthrough works for interactive apps.
-# Usage: op-env [--tpl /path/to/template] <command> [args...]
+# Usage: op-env [--tpl /path/to/template] [-q|--quiet] <command> [args...]
 
-# Template path: --tpl flag > OP_ENV_TPL env var > default
-if [ "$1" = "--tpl" ] && [ -n "$2" ]; then
-  TPL="$2"
-  shift 2
-else
-  TPL="${OP_ENV_TPL:-${HOME}/.claude/.env.tpl}"
-fi
+QUIET=0
+
+# Parse flags: --tpl and -q/--quiet (order-independent)
+while true; do
+  case "${1:-}" in
+    --tpl)
+      [ -n "${2:-}" ] || { echo "op-env: --tpl requires an argument" >&2; exit 1; }
+      TPL="$2"
+      shift 2
+      ;;
+    -q|--quiet)
+      QUIET=1
+      shift
+      ;;
+    *)
+      break
+      ;;
+  esac
+done
+
+# Default template path if --tpl was not provided
+TPL="${TPL:-${OP_ENV_TPL:-${HOME}/.claude/.env.tpl}}"
 
 if [ ! -f "$TPL" ]; then
   echo "op-env: template not found: $TPL" >&2
@@ -18,11 +33,25 @@ if [ ! -f "$TPL" ]; then
 fi
 
 # Get key names from template (skip comments and blank lines)
-KEYS=$(grep -v '^#' "$TPL" | grep -v '^$' | cut -d= -f1 | tr '\n' '|' | sed 's/|$//')
+mapfile -t EXPECTED_KEYS < <(grep -v '^#' "$TPL" | grep -v '^$' | cut -d= -f1)
+TOTAL=${#EXPECTED_KEYS[@]}
+
+# Build pipe-separated pattern for grep
+KEYS_PATTERN=$(printf '%s|' "${EXPECTED_KEYS[@]}")
+KEYS_PATTERN="${KEYS_PATTERN%|}"
 
 # Resolve all secrets in one op call, extract only our keys, export them
+RESOLVED=0
 while IFS='=' read -r key value; do
+  if [ -n "$value" ]; then
+    RESOLVED=$((RESOLVED + 1))
+  fi
   export "$key=$value"
-done < <(op run --no-masking --env-file "$TPL" -- env 2>/dev/null | grep -E "^($KEYS)=")
+done < <(op run --no-masking --env-file "$TPL" -- env 2>/dev/null | grep -E "^($KEYS_PATTERN)=")
+
+# Print summary to stderr unless --quiet/-q
+if [ "$QUIET" -eq 0 ]; then
+  echo "op-env: ${RESOLVED}/${TOTAL} secrets resolved" >&2
+fi
 
 exec "$@"
