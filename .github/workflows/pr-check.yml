@@ -72,19 +72,21 @@ jobs:
         id: b2
         continue-on-error: true
         run: |
-          failed=false
-          for f in bin/*; do
-            [ -f "$f" ] || continue
+          # B2 only applies to bin/op-env (the launcher). Companion utilities
+          # like bin/op-env-scan are scanners that end with exit, not exec.
+          f="bin/op-env"
+          if [ ! -f "$f" ]; then
+            echo "| B2 | BLOCKING | PASS | bin/op-env not modified |" >> /tmp/review-results.md
+          else
             last=$(grep -v '^\s*#' "$f" | grep -v '^\s*$' | tail -1)
             if echo "$last" | grep -q 'exec "\$@"'; then
               echo "| B2 | BLOCKING | PASS | $f ends with \`exec\` |" >> /tmp/review-results.md
             else
               echo "| B2 | BLOCKING | FAIL | $f last line: \`${last:0:60}\` |" >> /tmp/review-results.md
               echo "true" > /tmp/blocking-failure
-              failed=true
+              exit 1
             fi
-          done
-          [ "$failed" = true ] && exit 1 || true
+          fi
 
       - name: "F1: Complexity flag"
         id: f1
