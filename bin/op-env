@@ -43,7 +43,10 @@ if [ ! -f "$TPL" ]; then
 fi
 
 # Get key names from template (skip comments and blank lines)
-mapfile -t EXPECTED_KEYS < <(grep -v '^#' "$TPL" | grep -v '^$' | cut -d= -f1)
+EXPECTED_KEYS=()
+while IFS= read -r k; do
+  [ -n "$k" ] && EXPECTED_KEYS+=("$k")
+done < <(grep -v '^#' "$TPL" | grep -v '^$' | cut -d= -f1)
 TOTAL=${#EXPECTED_KEYS[@]}
 
 # Build pipe-separated pattern for grep
@@ -76,6 +79,7 @@ fi
 # Normal mode: export resolved secrets
 RESOLVED=0
 while IFS='=' read -r key value; do
+  [ -z "$key" ] && continue
   if [ -n "$value" ]; then
     RESOLVED=$((RESOLVED + 1))
   fi

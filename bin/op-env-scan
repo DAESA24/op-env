@@ -56,7 +56,10 @@ if [ "$INSTALL_HOOK" = true ]; then
 fi
 
 # Get staged files (only added, copied, modified — not deleted)
-mapfile -t STAGED_FILES < <(git diff --cached --diff-filter=ACM --name-only 2>/dev/null)
+STAGED_FILES=()
+while IFS= read -r f; do
+  [ -n "$f" ] && STAGED_FILES+=("$f")
+done < <(git diff --cached --diff-filter=ACM --name-only 2>/dev/null)
 if [ ${#STAGED_FILES[@]} -eq 0 ]; then
   echo "op-env-scan: no staged files to scan" >&2
   exit 0
@@ -64,7 +67,10 @@ fi
 
 # Resolve secrets from template (same mechanism as op-env)
 RESOLVED=$(op run --no-masking --env-file "$TPL" -- env 2>/dev/null)
-mapfile -t EXPECTED_KEYS < <(grep -v '^#' "$TPL" | grep -v '^$' | cut -d= -f1)
+EXPECTED_KEYS=()
+while IFS= read -r k; do
+  [ -n "$k" ] && EXPECTED_KEYS+=("$k")
+done < <(grep -v '^#' "$TPL" | grep -v '^$' | cut -d= -f1)
 
 # Scan staged files for each resolved secret value
 LEAK_COUNT=0
