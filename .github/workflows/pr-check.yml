@@ -1,6 +1,10 @@
 name: PR Review
 on: [pull_request]
 
+permissions:
+  pull-requests: write
+  contents: read
+
 jobs:
   review:
     runs-on: ubuntu-latest
@@ -9,47 +13,81 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: "Initialize results"
+        run: |
+          echo "## PR Review Results" > /tmp/review-results.md
+          echo "" >> /tmp/review-results.md
+          echo "| Check | Tier | Result | Detail |" >> /tmp/review-results.md
+          echo "|-------|------|--------|--------|" >> /tmp/review-results.md
+          echo "false" > /tmp/blocking-failure
+
       - name: "B3: Shellcheck"
+        id: b3
+        continue-on-error: true
         run: |
           sudo apt-get install -y shellcheck > /dev/null 2>&1
+          output=""
+          failed=false
           for f in bin/*; do
-            [ -f "$f" ] && shellcheck "$f"
+            [ -f "$f" ] || continue
+            if result=$(shellcheck "$f" 2>&1); then
+              output="$output $f clean"
+            else
+              output="$result"
+              failed=true
+            fi
           done
+          if [ "$failed" = true ]; then
+            echo "| B3 | BLOCKING | FAIL | Shellcheck errors: \`${output:0:100}\` |" >> /tmp/review-results.md
+            echo "true" > /tmp/blocking-failure
+            exit 1
+          else
+            echo "| B3 | BLOCKING | PASS | All scripts pass shellcheck |" >> /tmp/review-results.md
+          fi
 
       - name: "B1: No secret exfiltration patterns"
+        id: b1
+        continue-on-error: true
         run: |
-          # Extract only added code lines (not diff headers, not comments)
           added_code=$(git diff origin/main --unified=0 -- 'bin/*' | grep '^\+' | grep -v '^\+\+\+' | grep -v '^\+\s*#' || true)
           if [ -z "$added_code" ]; then
-            echo "B1 PASS — No added code lines to check"
+            echo "| B1 | BLOCKING | PASS | No added code lines to check |" >> /tmp/review-results.md
             exit 0
           fi
           patterns='(>>?\s|tee\s|mktemp|curl\s|wget\s|nc\s|ncat\s)'
-          if echo "$added_code" | grep -P "$patterns"; then
-            echo "::error::B1 FAIL — Potential secret exfiltration pattern detected in added code"
+          if match=$(echo "$added_code" | grep -P "$patterns"); then
+            echo "| B1 | BLOCKING | FAIL | Exfiltration pattern: \`${match:0:80}\` |" >> /tmp/review-results.md
+            echo "true" > /tmp/blocking-failure
             exit 1
           fi
           value_patterns='(echo.*\$\{?value|printf.*\$\{?value|>\s.*\$\{?value)'
-          if echo "$added_code" | grep -P "$value_patterns"; then
-            echo "::error::B1 FAIL — Possible secret value written to output or file"
+          if match=$(echo "$added_code" | grep -P "$value_patterns"); then
+            echo "| B1 | BLOCKING | FAIL | Secret value in output: \`${match:0:80}\` |" >> /tmp/review-results.md
+            echo "true" > /tmp/blocking-failure
             exit 1
           fi
-          echo "B1 PASS — No exfiltration patterns in added code"
+          echo "| B1 | BLOCKING | PASS | No exfiltration patterns in added code |" >> /tmp/review-results.md
 
       - name: "B2: TTY preservation (exec is last happy-path line)"
+        id: b2
+        continue-on-error: true
         run: |
+          failed=false
           for f in bin/*; do
             [ -f "$f" ] || continue
             last=$(grep -v '^\s*#' "$f" | grep -v '^\s*$' | tail -1)
             if echo "$last" | grep -q 'exec "\$@"'; then
-              echo "B2 PASS — $f ends with exec"
+              echo "| B2 | BLOCKING | PASS | $f ends with \`exec\` |" >> /tmp/review-results.md
             else
-              echo "::error::B2 FAIL — $f last line is '$last', expected 'exec \"\$@\"'"
-              exit 1
+              echo "| B2 | BLOCKING | FAIL | $f last line: \`${last:0:60}\` |" >> /tmp/review-results.md
+              echo "true" > /tmp/blocking-failure
+              failed=true
             fi
           done
+          [ "$failed" = true ] && exit 1 || true
 
       - name: "F1: Complexity flag"
+        id: f1
         run: |
           for f in bin/*; do
             [ -f "$f" ] || continue
@@ -57,18 +95,39 @@ jobs:
             added=$(git diff origin/main --numstat -- "$f" | awk '{print $1}' || echo 0)
             [ -z "$added" ] && added=0
             if [ "$added" -gt 0 ] && [ "$added" -gt "$((current / 2))" ]; then
-              echo "::warning::F1 FLAG — $f: $added lines added to a $current-line script. Review for proportionality."
+              echo "| F1 | FLAGGED | FLAG | $f: +$added lines to $current-line script |" >> /tmp/review-results.md
             else
-              echo "F1 OK — $f: $added lines added to $current-line script"
+              echo "| F1 | FLAGGED | OK | $f: +$added lines to $current-line script |" >> /tmp/review-results.md
             fi
           done
 
       - name: "F2: New external commands"
+        id: f2
         run: |
           allowlist='(bash|sh|op|git|grep|sed|cut|tr|echo|printf|env|exec|wc|read|test|exit|shift|getopts|getopt|local|return|source|true|false|set|unset|export|eval|cat|head|tail|sort|awk|tput|mkdir|chmod|cp|ln|rm|ls|diff|basename|dirname|realpath|readlink|date|sleep|wait|kill|trap|ulimit|\[|\[\[)'
           new_commands=$(git diff origin/main --unified=0 -- 'bin/*' | grep '^\+' | grep -v '^\+\+\+' | grep -v '^\+\s*#' | grep -oP '\b\w+\b' | sort -u | grep -vP "^$allowlist$" | grep -vP '^[A-Z_]+$' | grep -vP '^(if|then|else|elif|fi|for|do|done|while|until|case|esac|in|function)$' || true)
           if [ -n "$new_commands" ]; then
-            echo "::warning::F2 FLAG — New commands detected in diff (review for necessity): $new_commands"
+            echo "| F2 | FLAGGED | FLAG | New commands: \`$new_commands\` |" >> /tmp/review-results.md
           else
-            echo "F2 OK — No new external commands detected"
+            echo "| F2 | FLAGGED | OK | No new external commands |" >> /tmp/review-results.md
+          fi
+
+      - name: "Post results as PR comment"
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "" >> /tmp/review-results.md
+          blocking=$(cat /tmp/blocking-failure)
+          if [ "$blocking" = "true" ]; then
+            echo "**Result: BLOCKING failure detected. PR cannot merge until resolved.**" >> /tmp/review-results.md
+          else
+            echo "**Result: All automated checks passed. Review R1-R4 checklist manually.**" >> /tmp/review-results.md
+          fi
+          echo "" >> /tmp/review-results.md
+          echo "*Review criteria: [REVIEW_CRITERIA.md](../blob/main/REVIEW_CRITERIA.md)*" >> /tmp/review-results.md
+          gh pr comment "${{ github.event.pull_request.number }}" --body "$(cat /tmp/review-results.md)"
+          # Fail the job if any blocking check failed
+          if [ "$blocking" = "true" ]; then
+            exit 1
           fi
