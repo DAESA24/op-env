@@ -8,7 +8,7 @@ Built for AI coding agents (Claude Code, Cursor, Aider) that need API keys at ru
 
 My name is Drew and I'm a [PAI](https://github.com/danielmiessler/PAI) user learning AI engineering, not a seasoned developer, systems engineer, or security expert. I built this to solve a real problem in my own setup — I needed API keys available to Claude Code without putting secrets in `.env` files, dotfiles, or anywhere on disk — and the standard approaches (`op run`, env exports, dotenv) all had deal-breaking limitations for interactive TUI applications.
 
-Although this architecture was built for PAI users, but the underlying pattern — a bash wrapper that resolves 1Password secrets and execs an interactive command with TTY preserved — is general enough to adapt to any framework or AI coding agent workflow. If you're not using PAI, the op-env script and template format work with anything.
+Although this architecture was built for PAI users, the underlying pattern — a bash wrapper that resolves 1Password secrets and executes an interactive command with TTY preserved — is general enough to adapt to any framework or AI coding agent workflow. If you're not using PAI, the op-env script and template format work with anything.
 
 I figured it was worth sharing because the problem is common and the solution is small enough to understand in a few minutes. If you see ways to improve it — or if I'm doing something fundamentally wrong from a security perspective — I'd genuinely appreciate the feedback. The PAI community and the broader developer community have far more experience than I do, and I'm here to learn.
 
