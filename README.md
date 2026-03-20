@@ -36,6 +36,9 @@ op-env <your-command> [args...]
 
 # Example: launch Claude Code with secrets injected
 op-env claude
+
+# Use a different template
+op-env --tpl ~/projects/other/.env.tpl claude
 ```
 
 ## Why UUIDs instead of names
@@ -52,11 +55,22 @@ op item list --vault <vault-uuid> --format=json | jq '.[] | {id, title}'
 
 ## The script
 
-The entire tool is 17 lines of bash:
+The entire tool is a small bash script:
 
 ```bash
 #!/bin/bash
-TPL="${HOME}/.claude/.env.tpl"
+# Template path: --tpl flag > OP_ENV_TPL env var > default
+if [ "$1" = "--tpl" ] && [ -n "$2" ]; then
+  TPL="$2"
+  shift 2
+else
+  TPL="${OP_ENV_TPL:-${HOME}/.claude/.env.tpl}"
+fi
+
+if [ ! -f "$TPL" ]; then
+  echo "op-env: template not found: $TPL" >&2
+  exit 1
+fi
 
 KEYS=$(grep -v '^#' "$TPL" | grep -v '^$' | cut -d= -f1 | tr '\n' '|' | sed 's/|$//')
 
@@ -67,7 +81,7 @@ done < <(op run --no-masking --env-file "$TPL" -- env 2>/dev/null | grep -E "^($
 exec "$@"
 ```
 
-That's it. No dependencies beyond bash and the 1Password CLI.
+No dependencies beyond bash and the 1Password CLI. The template path defaults to `~/.claude/.env.tpl` but can be overridden with `--tpl /path/to/template` or the `OP_ENV_TPL` environment variable.
 
 ## Security model
 

@@ -2,6 +2,10 @@
 
 ## 2026-03-20
 
+- Configurable template path via `--tpl` flag and `OP_ENV_TPL` env var (PR #6)
+- File-existence guard exits with clear error if template not found
+- Added PR review framework v1.1: shellcheck + exfiltration checks + TTY verification in CI
+- PR review results posted as comments on every PR (pass and fail)
 - Formalized as tracked project with git repo and GitHub mirror
 - Standardized on UUIDs for vault/item references (names break on rename)
 - Added GitHub CLI conditional unalias integration for uninterrupted `gh` access in PAI sessions
