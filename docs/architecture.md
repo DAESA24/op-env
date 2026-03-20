@@ -4,7 +4,7 @@
 
 ## Summary
 
-**A note from the author:** I'm a [PAI](https://github.com/danielmiessler/PAI) user learning AI engineering, not a seasoned developer, systems engineer, or security expert. I built this to solve a real problem in my own setup and figured it was worth sharing. If you see ways to improve it — or if I'm doing something wrong — I'd genuinely appreciate the feedback. The PAI community has far more experience than I do, and I'm here to learn.
+This architecture was built for [PAI](https://github.com/danielmiessler/PAI) users, but the underlying pattern — a bash wrapper that resolves 1Password secrets and `exec`s an interactive command with TTY preserved — is general enough to adapt to any framework or AI coding agent workflow. If you're not using PAI, the `op-env` script and template format work with anything.
 
 This document describes `op-env`, a 17-line bash wrapper script that solves a specific problem: injecting 1Password secrets into AI coding agents that require an interactive terminal (TTY). The core idea is simple — resolve all `op://` secret references in a single 1Password API call, export them as environment variables, then `exec` the target command so the process inherits the terminal directly. Secrets exist only in process memory for the duration of the session. No `.env` files are written to disk, ever.
 
