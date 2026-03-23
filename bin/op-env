@@ -4,7 +4,10 @@
 # then exec's the given command so TTY passthrough works for interactive apps.
 # Usage: op-env [-h|--help] [-v|--version] [--tpl /path/to/template] [--check] [--partial] [-q|--quiet] <command> [args...]
 
-VERSION="0.2.0"
+# Resolve version: follow symlink to repo VERSION file, fall back to "dev"
+SCRIPT_REAL=$(readlink "$0" 2>/dev/null || echo "$0")
+SCRIPT_DIR=$(cd "$(dirname "$SCRIPT_REAL")" && pwd)
+VERSION=$(cat "$SCRIPT_DIR/../VERSION" 2>/dev/null || echo "dev")
 
 CHECK=0
 QUIET=0
