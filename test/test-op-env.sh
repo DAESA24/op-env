@@ -64,6 +64,18 @@ assert_eq "0" "$result" "op-env-scan has no associative arrays"
 
 echo "--- Flag Parsing ---"
 
+# --version prints version and exits 0
+stderr=$(bash "$OP_ENV" --version 2>&1 1>/dev/null)
+assert_contains "$stderr" "op-env 0." "--version prints version string"
+
+ver_exit=0
+bash "$OP_ENV" --version >/dev/null 2>&1 || ver_exit=$?
+assert_eq "0" "$ver_exit" "--version exits 0"
+
+# -v short form
+stderr=$(bash "$OP_ENV" -v 2>&1 1>/dev/null)
+assert_contains "$stderr" "op-env 0." "-v prints version string"
+
 # --tpl with valid fixture
 output=$(bash "$OP_ENV" --tpl "$FIXTURES/test.tpl" --check 2>/dev/null)
 assert_contains "$output" "TEST_KEY_A" "--tpl with valid fixture resolves keys"
