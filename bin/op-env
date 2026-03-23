@@ -34,6 +34,36 @@ while true; do
       echo "op-env $VERSION" >&2
       exit 0
       ;;
+    -h|--help)
+      cat <<HELP >&2
+op-env $VERSION — 1Password secret injection for interactive CLI tools
+
+USAGE:
+  op-env [flags] <command> [args...]
+
+FLAGS:
+  --tpl <path>    Template path (default: ~/.claude/.env.tpl, or \$OP_ENV_TPL)
+  --check         Show resolution status per key with safe preview, then exit
+  --partial       Allow launching with missing secrets (default: abort)
+  -q, --quiet     Suppress the resolution count summary
+  -v, --version   Show version
+  -h, --help      Show this help
+
+EXAMPLES:
+  op-env claude                              Launch with default template
+  op-env --tpl ~/other/.env.tpl claude       Custom template
+  op-env --check                             Diagnostic: which keys resolved?
+  op-env --partial pai --local               Launch even if some keys missing
+  op-env -q pai --local                      Suppress count output
+
+COMPANION:
+  op-env-scan [--tpl <path>] [--install-hook]
+  Pre-commit secret leak scanner. Scans staged files for hardcoded values.
+
+Full documentation: https://github.com/DAESA24/op-env/blob/main/docs/architecture.md
+HELP
+      exit 0
+      ;;
     *)
       break
       ;;

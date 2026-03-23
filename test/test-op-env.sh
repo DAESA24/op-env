@@ -64,6 +64,21 @@ assert_eq "0" "$result" "op-env-scan has no associative arrays"
 
 echo "--- Flag Parsing ---"
 
+# --help prints usage and exits 0
+stderr=$(bash "$OP_ENV" --help 2>&1 1>/dev/null)
+assert_contains "$stderr" "USAGE:" "--help prints usage"
+assert_contains "$stderr" "--tpl" "--help lists --tpl flag"
+assert_contains "$stderr" "--check" "--help lists --check flag"
+assert_contains "$stderr" "op-env-scan" "--help mentions companion tool"
+
+help_exit=0
+bash "$OP_ENV" --help >/dev/null 2>&1 || help_exit=$?
+assert_eq "0" "$help_exit" "--help exits 0"
+
+# -h short form
+stderr=$(bash "$OP_ENV" -h 2>&1 1>/dev/null)
+assert_contains "$stderr" "USAGE:" "-h prints usage"
+
 # --version prints version and exits 0
 stderr=$(bash "$OP_ENV" --version 2>&1 1>/dev/null)
 assert_contains "$stderr" "op-env 0." "--version prints version string"
