@@ -80,7 +80,7 @@ stderr=$(bash "$OP_ENV" -h 2>&1 1>/dev/null)
 assert_contains "$stderr" "USAGE:" "-h prints usage"
 
 # --version prints version from VERSION file and exits 0
-expected_version=$(cat "$REPO_DIR/VERSION")
+expected_version=$(cat "$REPO_DIR/version.txt")
 stderr=$(bash "$OP_ENV" --version 2>&1 1>/dev/null)
 assert_contains "$stderr" "op-env $expected_version" "--version prints version from VERSION file"
 

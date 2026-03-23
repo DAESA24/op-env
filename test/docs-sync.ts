@@ -8,7 +8,7 @@ import { readFileSync } from "fs";
 const OP_ENV = readFileSync("bin/op-env", "utf-8");
 const README = readFileSync("README.md", "utf-8");
 const CHANGELOG = readFileSync("CHANGELOG.md", "utf-8");
-const VERSION = readFileSync("VERSION", "utf-8").trim();
+const VERSION = readFileSync("version.txt", "utf-8").trim();
 
 let tests = 0;
 let failures = 0;
@@ -52,11 +52,11 @@ for (const flag of scriptFlags) {
   assert(documented, `${flag} is in bin/op-env case statement but not in README features table`);
 }
 
-// --- Test 2: VERSION file is not hardcoded in script ---
+// --- Test 2: version.txt is not hardcoded in script ---
 
 assert(
-  OP_ENV.includes('cat "$SCRIPT_DIR/../VERSION"'),
-  "bin/op-env reads version from VERSION file (not hardcoded)"
+  OP_ENV.includes('cat "$SCRIPT_DIR/../version.txt"'),
+  "bin/op-env reads version from version.txt (not hardcoded)"
 );
 
 // --- Test 3: Script --version output would reference VERSION variable ---
@@ -80,12 +80,12 @@ assert(
   "Help text includes $VERSION reference"
 );
 
-// --- Test 6: VERSION file format is valid semver ---
+// --- Test 6: version.txt format is valid semver ---
 
 const semverPattern = /^\d+\.\d+\.\d+$/;
 assert(
   semverPattern.test(VERSION),
-  `VERSION file content "${VERSION}" is not valid semver`
+  `version.txt content "${VERSION}" is not valid semver`
 );
 
 // --- Results ---

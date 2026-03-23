@@ -2,12 +2,6 @@
   "packages": {
     ".": {
       "release-type": "simple",
-      "extra-files": [
-        {
-          "type": "plain-text",
-          "path": "VERSION"
-        }
-      ],
       "changelog-path": "CHANGELOG.md",
       "bump-minor-pre-major": true
     }

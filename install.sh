@@ -7,14 +7,14 @@ set -e
 INSTALL_DIR="${HOME}/.local/bin"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-VERSION=$(cat "$SCRIPT_DIR/VERSION" 2>/dev/null || echo "dev")
+VERSION=$(cat "$SCRIPT_DIR/version.txt" 2>/dev/null || echo "dev")
 
 mkdir -p "$INSTALL_DIR"
 cp "$SCRIPT_DIR/bin/op-env" "$INSTALL_DIR/op-env"
 chmod +x "$INSTALL_DIR/op-env"
 
-# Bake version into installed copy (since VERSION file won't be adjacent)
-sed -i.bak "s|cat \"\$SCRIPT_DIR/../VERSION\" 2>/dev/null|echo \"$VERSION\"|" "$INSTALL_DIR/op-env"
+# Bake version into installed copy (since version.txt won't be adjacent)
+sed -i.bak "s|cat \"\$SCRIPT_DIR/../version.txt\" 2>/dev/null|echo \"$VERSION\"|" "$INSTALL_DIR/op-env"
 rm -f "$INSTALL_DIR/op-env.bak"
 
 echo "Installed op-env $VERSION to $INSTALL_DIR/op-env"
