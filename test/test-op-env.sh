@@ -79,9 +79,10 @@ assert_eq "0" "$help_exit" "--help exits 0"
 stderr=$(bash "$OP_ENV" -h 2>&1 1>/dev/null)
 assert_contains "$stderr" "USAGE:" "-h prints usage"
 
-# --version prints version and exits 0
+# --version prints version from VERSION file and exits 0
+expected_version=$(cat "$REPO_DIR/VERSION")
 stderr=$(bash "$OP_ENV" --version 2>&1 1>/dev/null)
-assert_contains "$stderr" "op-env 0." "--version prints version string"
+assert_contains "$stderr" "op-env $expected_version" "--version prints version from VERSION file"
 
 ver_exit=0
 bash "$OP_ENV" --version >/dev/null 2>&1 || ver_exit=$?

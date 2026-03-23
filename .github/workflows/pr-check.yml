@@ -19,6 +19,11 @@ jobs:
           export PATH="$PWD/test/helpers:$PATH"
           bash test/test-op-env.sh
 
+      - uses: oven-sh/setup-bun@v2
+
+      - name: "Docs-sync validation"
+        run: bun test/docs-sync.ts
+
       - name: "Initialize results"
         run: |
           echo "## PR Review Results" > /tmp/review-results.md
