@@ -4,6 +4,8 @@
 # then exec's the given command so TTY passthrough works for interactive apps.
 # Usage: op-env [--tpl /path/to/template] [--check] [--partial] [-q|--quiet] <command> [args...]
 
+VERSION="0.2.0"
+
 CHECK=0
 QUIET=0
 PARTIAL=0
@@ -27,6 +29,10 @@ while true; do
     -q|--quiet)
       QUIET=1
       shift
+      ;;
+    -v|--version)
+      echo "op-env $VERSION" >&2
+      exit 0
       ;;
     *)
       break
