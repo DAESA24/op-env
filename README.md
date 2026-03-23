@@ -64,6 +64,8 @@ op item list --vault <vault-uuid> --format=json | jq '.[] | {id, title}'
 | Status check | `--check` | Show per-key resolution status with safe 2-char preview, then exit |
 | Count reporting | *(default)* | Prints `op-env: 7/7 secrets resolved` to stderr on launch |
 | Quiet mode | `-q` / `--quiet` | Suppress the count summary |
+| Version | `-v` / `--version` | Print version and exit |
+| Help | `-h` / `--help` | Print usage documentation and exit |
 | Leak scanning | `op-env-scan` | Companion script — scans staged git files for hardcoded secrets |
 | Hook install | `op-env-scan --install-hook` | Wire leak scanning into git pre-commit hook |
 
@@ -76,6 +78,27 @@ No dependencies beyond bash, the 1Password CLI, and git (for scanning).
 ![op-env Security Model](docs/images/op-env-security-model.jpg)
 
 For the full threat analysis — including what `op-env` protects against, what it doesn't, design decisions, the complete setup guide, and troubleshooting — see **[docs/architecture.md](docs/architecture.md)**.
+
+## Development
+
+### Running tests
+
+```bash
+bash test/test-op-env.sh
+```
+
+56 tests covering flag parsing, validation, check mode, output routing, edge cases, bash 3.2 compatibility regression, and op-env-scan. Tests use a mock `op` CLI — no 1Password required.
+
+### PR review
+
+Every PR runs automated checks via GitHub Actions:
+- Shellcheck on all scripts
+- Full test suite (56 tests)
+- B1: No secret exfiltration patterns in added code
+- B2: TTY preservation (`exec "$@"` is last line)
+- F1/F2: Complexity and new-command flags for reviewer attention
+
+Results are posted as a comment on each PR. See [REVIEW_CRITERIA.md](REVIEW_CRITERIA.md) for the full framework.
 
 ## Requirements
 

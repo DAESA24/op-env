@@ -2,7 +2,7 @@
 # op-env: Load 1Password secrets and exec command with TTY preserved
 # Resolves all op:// references from .env.tpl in one call, exports them,
 # then exec's the given command so TTY passthrough works for interactive apps.
-# Usage: op-env [--tpl /path/to/template] [--check] [--partial] [-q|--quiet] <command> [args...]
+# Usage: op-env [-h|--help] [-v|--version] [--tpl /path/to/template] [--check] [--partial] [-q|--quiet] <command> [args...]
 
 VERSION="0.2.0"
 

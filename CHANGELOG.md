@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-03-23
+
+- `--help` / `-h` flag with full usage documentation (PR #18, Issue #13)
+- `--version` / `-v` flag, starting at v0.2.0 (PR #17, Issue #14)
+- Functional test suite: 56 tests, mock op, CI integration (PR #16, Issue #15)
+- Fixed bash 3.2 compatibility: replaced `mapfile` with `while-read` loops (production bugfix)
+- Fixed PR review B1 check: scoped to added code lines only (was matching comments)
+- Fixed PR review B2 check: scoped to `bin/op-env` only (companion scripts end with `exit`, not `exec`)
+
 ## 2026-03-20
 
 - Fail-closed validation: aborts if any secrets fail to resolve, `--partial` to override (PR #12, Issue #1)
