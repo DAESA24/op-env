@@ -14,7 +14,7 @@ assert_eq() {
 
 assert_contains() {
   TESTS=$((TESTS + 1))
-  if ! echo "$1" | grep -qF "$2"; then
+  if ! echo "$1" | grep -qF -- "$2"; then
     FAILURES=$((FAILURES + 1))
     echo "FAIL: $3 — output does not contain '$2'" >&2
   fi
@@ -22,7 +22,7 @@ assert_contains() {
 
 assert_not_contains() {
   TESTS=$((TESTS + 1))
-  if echo "$1" | grep -qF "$2"; then
+  if echo "$1" | grep -qF -- "$2"; then
     FAILURES=$((FAILURES + 1))
     echo "FAIL: $3 — output should not contain '$2'" >&2
   fi
