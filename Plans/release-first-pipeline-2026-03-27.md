@@ -7,7 +7,7 @@ priority: high
 scope: install.sh guard, release workflow artifact publishing, update mechanism
 depends-on: feat/install-hardening PR merge
 pattern-test: op-env (first project to test this pattern)
-github-issue: TBD (will be linked after creation)
+github-issue: https://github.com/DAESA24/op-env/issues/24
 ---
 
 # Release-First Pipeline Pattern

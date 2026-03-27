@@ -156,4 +156,11 @@ if [ ${#MISSING[@]} -gt 0 ]; then
   fi
 fi
 
+# Store GITHUB_TOKEN in gh CLI's native credential store (macOS Keychain)
+# so gh works without repeated 1Password prompts, even when the
+# 1Password plugin alias is active. Silent failure if gh isn't installed.
+if [ -n "${GITHUB_TOKEN:-}" ] && command -v gh >/dev/null 2>&1; then
+  echo "$GITHUB_TOKEN" | gh auth login --with-token 2>/dev/null || true
+fi
+
 exec "$@"

@@ -1,0 +1,23 @@
+#!/bin/bash
+# Mock gh CLI — captures auth login --with-token calls for testing
+# Set MOCK_GH_LOG to a file path to record calls.
+# Set MOCK_GH_FAIL=1 to simulate gh failure.
+
+LOG="${MOCK_GH_LOG:-/dev/null}"
+
+if [ "${MOCK_GH_FAIL:-0}" = "1" ]; then
+  exit 1
+fi
+
+# Record the full command
+echo "gh $*" >> "$LOG"
+
+# Handle auth login --with-token: read token from stdin
+if [ "$1" = "auth" ] && [ "$2" = "login" ] && [ "$3" = "--with-token" ]; then
+  TOKEN=$(cat)
+  echo "TOKEN=$TOKEN" >> "$LOG"
+  exit 0
+fi
+
+# Default: success
+exit 0

@@ -322,6 +322,56 @@ assert_contains "$(cat "$existing_hook")" "op-env-scan" "Install hook adds scann
 rm -rf "$HOOK_TMPDIR2"
 
 # ============================================================
+# Category 9: gh CLI Auth Integration
+# ============================================================
+
+echo "--- gh CLI Auth Integration ---"
+
+chmod +x "$HELPERS/gh"
+
+# gh auth login NOT called when no GITHUB_TOKEN in template
+GH_LOG=$(mktemp)
+export MOCK_GH_LOG="$GH_LOG"
+result=$("$OP_ENV" --tpl "$FIXTURES/test.tpl" -q echo done 2>&1)
+gh_called="0"
+[ -s "$GH_LOG" ] && gh_called=$(grep -c "gh auth login --with-token" "$GH_LOG" || true)
+assert_eq "0" "$gh_called" "gh auth login not called when no GITHUB_TOKEN key"
+rm -f "$GH_LOG"
+
+# gh auth login called when GITHUB_TOKEN resolved
+GH_TPL=$(mktemp)
+echo "GITHUB_TOKEN=op://vault/item/token" > "$GH_TPL"
+GH_LOG2=$(mktemp)
+export MOCK_GH_LOG="$GH_LOG2"
+result=$("$OP_ENV" --tpl "$GH_TPL" -q echo done 2>&1)
+gh_called="0"
+[ -s "$GH_LOG2" ] && gh_called=$(grep -c "gh auth login --with-token" "$GH_LOG2" || true)
+assert_eq "1" "$gh_called" "gh auth login called when GITHUB_TOKEN resolved"
+rm -f "$GH_LOG2" "$GH_TPL"
+
+# gh auth login receives the correct token value
+GH_TPL2=$(mktemp)
+echo "GITHUB_TOKEN=op://vault/item/token" > "$GH_TPL2"
+GH_LOG3=$(mktemp)
+export MOCK_GH_LOG="$GH_LOG3"
+result=$("$OP_ENV" --tpl "$GH_TPL2" -q echo done 2>&1)
+token_value=$(grep "^TOKEN=" "$GH_LOG3" 2>/dev/null | cut -d= -f2-)
+assert_eq "mock_GITHUB_TOKEN_value_12345678" "$token_value" "gh auth login receives correct token"
+rm -f "$GH_LOG3" "$GH_TPL2"
+unset MOCK_GH_LOG
+
+# op-env works when gh binary not available
+GH_TPL3=$(mktemp)
+echo "GITHUB_TOKEN=op://vault/item/token" > "$GH_TPL3"
+# Temporarily hide the mock gh by renaming it
+mv "$HELPERS/gh" "$HELPERS/gh.bak"
+result=$("$OP_ENV" --tpl "$GH_TPL3" -q echo done 2>&1)
+rc=$?
+mv "$HELPERS/gh.bak" "$HELPERS/gh"
+assert_eq "0" "$rc" "op-env succeeds when gh not available"
+rm -f "$GH_TPL3"
+
+# ============================================================
 # Results
 # ============================================================
 
