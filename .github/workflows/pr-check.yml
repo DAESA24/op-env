@@ -19,6 +19,11 @@ jobs:
           export PATH="$PWD/test/helpers:$PATH"
           bash test/test-op-env.sh
 
+      - name: "Installation tests"
+        run: |
+          chmod +x test/helpers/op test/helpers/check-env.sh
+          bash test/test-install.sh
+
       - uses: oven-sh/setup-bun@v2
 
       - name: "Docs-sync validation"
@@ -39,7 +44,7 @@ jobs:
           sudo apt-get install -y shellcheck > /dev/null 2>&1
           output=""
           failed=false
-          for f in bin/*; do
+          for f in bin/* install.sh; do
             [ -f "$f" ] || continue
             if result=$(shellcheck "$f" 2>&1); then
               output="$output $f clean"
@@ -60,7 +65,7 @@ jobs:
         id: b1
         continue-on-error: true
         run: |
-          added_code=$(git diff origin/main --unified=0 -- 'bin/*' | grep '^\+' | grep -v '^\+\+\+' | grep -v '^\+\s*#' || true)
+          added_code=$(git diff origin/main --unified=0 -- 'bin/*' 'install.sh' | grep '^\+' | grep -v '^\+\+\+' | grep -v '^\+\s*#' || true)
           if [ -z "$added_code" ]; then
             echo "| B1 | BLOCKING | PASS | No added code lines to check |" >> /tmp/review-results.md
             exit 0
