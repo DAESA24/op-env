@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.0](https://github.com/DAESA24/op-env/compare/v0.3.1...v0.4.0) (2026-03-27)
+
+
+### Features
+
+* **install:** harden install.sh and add installation test suite ([eea17cc](https://github.com/DAESA24/op-env/commit/eea17cc0d9af0d42aeff701aa504f6ed52c6cc5a))
+* **install:** harden install.sh and add installation test suite ([4ddf495](https://github.com/DAESA24/op-env/commit/4ddf495ce1ec5084f8e5bfa7217d480dc88891fd))
+
 ## [0.3.1](https://github.com/DAESA24/op-env/compare/v0.3.0...v0.3.1) (2026-03-23)
 
 
