@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.3.1](https://github.com/DAESA24/op-env/compare/v0.3.0...v0.3.1) (2026-03-23)
+
+
+### Bug Fixes
+
+* release-please config to update VERSION file using plain-text updater ([f07346d](https://github.com/DAESA24/op-env/commit/f07346d894873b2dfc1df0f4cad96ad31e194bde))
+* use PAT for release-please to trigger PR checks on release PRs ([8ecfe7e](https://github.com/DAESA24/op-env/commit/8ecfe7eb867cb0843b3030348a1b262a843e031e))
+* use version.txt for release-please simple type compatibility ([81f20ec](https://github.com/DAESA24/op-env/commit/81f20ec669dd3acf0a0d4bb6182fce4fe405ee8c))
+
 ## [0.3.0](https://github.com/DAESA24/op-env/compare/v0.2.0...v0.3.0) (2026-03-23)
 
 
