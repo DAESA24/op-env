@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/DAESA24/op-env/compare/v0.4.0...v0.4.1) (2026-03-27)
+
+
+### Bug Fixes
+
+* **auth:** store GitHub PAT in Keychain via gh auth login at session start ([241c89f](https://github.com/DAESA24/op-env/commit/241c89f8c7f1dc58cd115c3a42c291eb53a80f7a))
+
 ## [0.4.0](https://github.com/DAESA24/op-env/compare/v0.3.1...v0.4.0) (2026-03-27)
 
 
