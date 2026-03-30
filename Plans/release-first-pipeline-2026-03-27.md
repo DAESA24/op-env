@@ -18,7 +18,7 @@ On 2026-03-27, a broken symlink at `~/.local/bin/op-env` caused all Claude Code 
 
 **Lesson:** Production binaries should never depend on the dev working tree. They should come exclusively from releases.
 
-**This pattern is being tested with op-env first.** If it works well, it can be applied to other projects in `~/projects/dev-tools/`.
+**This pattern is being tested with op-env first.** If it works well, it can be applied to other projects in `~/projects/dev/dev-tools/`.
 
 ## Current State (after install-hardening PR)
 

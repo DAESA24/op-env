@@ -12,7 +12,7 @@ related-issue: broken symlink at ~/.local/bin/op-env after dev directory rename
 
 ## Context
 
-Drew's `op-env` production binary at `~/.local/bin/op-env` is a broken symlink pointing to the old dev directory path (`~/projects/dev-tools/op-env/bin/op-env`). The directory was renamed to `op-env-dev`. The `install.sh` script correctly uses `cp` (not symlink), but the symlink was likely created manually at some point, bypassing install.sh.
+Drew's `op-env` production binary at `~/.local/bin/op-env` was a broken symlink pointing to the old dev directory path (`~/projects/dev-tools/op-env/bin/op-env`). The directory was renamed to `op-env-dev` and later relocated to `~/projects/dev/dev-tools/infra-dev/op-env-dev/`. The `install.sh` script correctly uses `cp` (not symlink), but the symlink was likely created manually at some point, bypassing install.sh. PR #23 fixed this — the production binary is now a standalone copy.
 
 **Goal:** The dev directory is purely for development. The production binary is an independent copy deployed by running `install.sh` after releases. CI/CD validates that the installation process works correctly. No future directory rename or dev-side change should ever break the production binary.
 
