@@ -10,7 +10,41 @@ permissions:
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release-please.outputs.release_created }}
+      tag_name: ${{ steps.release-please.outputs.tag_name }}
     steps:
       - uses: googleapis/release-please-action@v4
+        id: release-please
         with:
           token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+
+  publish-binary:
+    runs-on: ubuntu-latest
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build production binary
+        run: |
+          TAG="${{ needs.release-please.outputs.tag_name }}"
+          VERSION="${TAG#v}"
+          cp bin/op-env op-env
+          chmod +x op-env
+          # Bake version (same sed pattern as install.sh)
+          sed -i "s|cat \"\$SCRIPT_DIR/../version.txt\" 2>/dev/null|echo \"$VERSION\"|" op-env
+          # Verify version was baked — fail if sed pattern didn't match
+          # shellcheck disable=SC2016
+          if grep -q 'cat "\$SCRIPT_DIR/../version.txt"' op-env; then
+            echo "ERROR: version baking failed" >&2
+            exit 1
+          fi
+          echo "Built op-env binary with version $VERSION"
+
+      - name: Upload release assets
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+        run: |
+          TAG="${{ needs.release-please.outputs.tag_name }}"
+          gh release upload "$TAG" op-env --clobber
