@@ -32,7 +32,7 @@ run_install() {
   HOME_BACKUP="$HOME"
   # Override HOME so install.sh writes to our temp dir
   export HOME="$install_dir"
-  (cd "$REPO_DIR" && bash install.sh 2>&1)
+  (cd "$REPO_DIR" && bash install.sh --dev 2>&1)
   local rc=$?
   export HOME="$HOME_BACKUP"
   return $rc
@@ -121,7 +121,7 @@ rm -rf "$TMPDIR7"
 TMPDIR8=$(mktemp -d)
 HOME_BACKUP="$HOME"
 export HOME="$TMPDIR8"
-(cd /tmp && bash "$INSTALLER" 2>&1) > /dev/null
+(cd /tmp && bash "$INSTALLER" --dev 2>&1) > /dev/null
 rc=$?
 export HOME="$HOME_BACKUP"
 result="fail"
@@ -183,6 +183,31 @@ result="no"
 echo "$last_line" | grep -q 'exec "\$@"' && result="yes"
 assert_eq "yes" "$result" "installed binary ends with exec (TTY preserved)"
 rm -rf "$TMPDIR13"
+
+# ============================================================
+# Category 5: Guard Tests — Release Tag Check
+# ============================================================
+
+echo "--- Guard: Release tag check ---"
+
+# Test 14: install.sh rejects untagged commit without --dev
+TMPDIR14=$(mktemp -d)
+HOME_BACKUP="$HOME"
+export HOME="$TMPDIR14"
+output=$(cd "$REPO_DIR" && bash install.sh 2>&1)
+rc=$?
+export HOME="$HOME_BACKUP"
+assert_eq "1" "$rc" "guard rejects untagged commit without --dev"
+assert_contains "$output" "WARNING" "guard prints WARNING on rejection"
+rm -rf "$TMPDIR14"
+
+# Test 15: install.sh accepts --dev flag on untagged commit
+TMPDIR15=$(mktemp -d)
+run_install "$TMPDIR15" > /dev/null
+result="missing"
+[ -f "$TMPDIR15/.local/bin/op-env" ] && result="installed"
+assert_eq "installed" "$result" "guard accepts --dev flag on untagged commit"
+rm -rf "$TMPDIR15"
 
 # ============================================================
 report
