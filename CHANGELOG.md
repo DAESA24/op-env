@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.2](https://github.com/DAESA24/op-env/compare/v0.4.1...v0.4.2) (2026-04-14)
+
+
+### Bug Fixes
+
+* **auth:** export GH_TOKEN to bypass 1Password plugin biometric prompts ([7e8d1ee](https://github.com/DAESA24/op-env/commit/7e8d1ee2750e288196d7a3c582d479743aa04e7c))
+* **auth:** export GH_TOKEN to bypass 1Password plugin biometric prompts ([bb993ec](https://github.com/DAESA24/op-env/commit/bb993ec512e43fbc524bf51b14959a3a32230fc7)), closes [#29](https://github.com/DAESA24/op-env/issues/29)
+
 ## [0.4.1](https://github.com/DAESA24/op-env/compare/v0.4.0...v0.4.1) (2026-03-27)
 
 
