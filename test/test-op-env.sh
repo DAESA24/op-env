@@ -371,6 +371,24 @@ mv "$HELPERS/gh.bak" "$HELPERS/gh"
 assert_eq "0" "$rc" "op-env succeeds when gh not available"
 rm -f "$GH_TPL3"
 
+# GH_TOKEN exported alongside GITHUB_TOKEN (prevents 1Password plugin prompts)
+GH_TPL4=$(mktemp)
+echo "GITHUB_TOKEN=op://vault/item/token" > "$GH_TPL4"
+result=$("$OP_ENV" --tpl "$GH_TPL4" -q "$HELPERS/check-env.sh" GH_TOKEN GITHUB_TOKEN 2>&1)
+gh_token_val=$(echo "$result" | grep "^GH_TOKEN=" | cut -d= -f2-)
+github_token_val=$(echo "$result" | grep "^GITHUB_TOKEN=" | cut -d= -f2-)
+assert_eq "$github_token_val" "$gh_token_val" "GH_TOKEN exported equal to GITHUB_TOKEN"
+assert_eq "mock_GITHUB_TOKEN_value_12345678" "$gh_token_val" "GH_TOKEN has correct resolved value"
+rm -f "$GH_TPL4"
+
+# GH_TOKEN not set when GITHUB_TOKEN not in template
+GH_TPL5=$(mktemp)
+echo "SOME_OTHER_KEY=op://vault/item/key" > "$GH_TPL5"
+result=$("$OP_ENV" --tpl "$GH_TPL5" -q "$HELPERS/check-env.sh" GH_TOKEN 2>&1)
+gh_token_val=$(echo "$result" | grep "^GH_TOKEN=" | cut -d= -f2-)
+assert_eq "UNSET" "$gh_token_val" "GH_TOKEN not set when GITHUB_TOKEN absent from template"
+rm -f "$GH_TPL5"
+
 # ============================================================
 # Results
 # ============================================================
