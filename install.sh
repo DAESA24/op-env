@@ -38,6 +38,12 @@ if grep -q 'cat "\$SCRIPT_DIR/../version.txt"' "$INSTALL_DIR/op-env"; then
   exit 1
 fi
 
+# Install update script alongside op-env
+if [ -f "$SCRIPT_DIR/update.sh" ]; then
+  cp "$SCRIPT_DIR/update.sh" "$INSTALL_DIR/op-env-update"
+  chmod +x "$INSTALL_DIR/op-env-update"
+fi
+
 echo "Installed op-env $VERSION to $INSTALL_DIR/op-env"
 
 # Check if ~/.local/bin is in PATH

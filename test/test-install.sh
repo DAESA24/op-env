@@ -210,4 +210,26 @@ assert_eq "installed" "$result" "guard accepts --dev flag on untagged commit"
 rm -rf "$TMPDIR15"
 
 # ============================================================
+# Category 6: Update Script Installation
+# ============================================================
+
+echo "--- Update script installation ---"
+
+# Test 16: install.sh copies update.sh as op-env-update
+TMPDIR16=$(mktemp -d)
+run_install "$TMPDIR16" > /dev/null
+result="missing"
+[ -f "$TMPDIR16/.local/bin/op-env-update" ] && result="installed"
+assert_eq "installed" "$result" "install copies update.sh as op-env-update"
+rm -rf "$TMPDIR16"
+
+# Test 17: op-env-update has executable permissions
+TMPDIR17=$(mktemp -d)
+run_install "$TMPDIR17" > /dev/null
+result="not-executable"
+[ -x "$TMPDIR17/.local/bin/op-env-update" ] && result="executable"
+assert_eq "executable" "$result" "op-env-update is executable"
+rm -rf "$TMPDIR17"
+
+# ============================================================
 report
