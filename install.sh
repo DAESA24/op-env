@@ -8,6 +8,16 @@ INSTALL_DIR="${HOME}/.local/bin"
 SCRIPT_REAL=$(readlink "$0" 2>/dev/null || echo "$0")
 SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_REAL")" && pwd)"
 
+# Release guard: prevent accidental installs from development state
+TAG=$(git -C "$SCRIPT_DIR" describe --exact-match HEAD 2>/dev/null || true)
+if [ -z "$TAG" ] && [ "$1" != "--dev" ]; then
+  echo "WARNING: Not a tagged release commit ($(git -C "$SCRIPT_DIR" rev-parse --short HEAD 2>/dev/null || echo 'unknown'))." >&2
+  echo "Use './install.sh --dev' to install from development state." >&2
+  echo "For production installs, download from: https://github.com/DAESA24/op-env/releases" >&2
+  exit 1
+fi
+if [ "${1:-}" = "--dev" ]; then shift; fi
+
 VERSION=$(cat "$SCRIPT_DIR/version.txt" 2>/dev/null || echo "dev")
 
 mkdir -p "$INSTALL_DIR"
