@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.6.0](https://github.com/DAESA24/op-env/compare/v0.5.0...v0.6.0) (2026-04-14)
+
+
+### Features
+
+* release workflow binary publishing ([803a502](https://github.com/DAESA24/op-env/commit/803a502c8852c9ec7bd7bf892a27b589bbd20940))
+* **release:** add publish-binary job to release workflow ([1c52c6c](https://github.com/DAESA24/op-env/commit/1c52c6c080d2c1f158485ff3b2fe5684651b18dc))
+* update mechanism via standalone update.sh ([e059f4e](https://github.com/DAESA24/op-env/commit/e059f4e471ef6312bb43948d3a70440720d92644))
+* **update:** add update.sh and install to PATH as op-env-update ([0e41dbb](https://github.com/DAESA24/op-env/commit/0e41dbbec0bcd9ee65e0d1103efa91339fa9387f))
+
 ## [0.5.0](https://github.com/DAESA24/op-env/compare/v0.4.2...v0.5.0) (2026-04-14)
 
 
