@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.0](https://github.com/DAESA24/op-env/compare/v0.4.2...v0.5.0) (2026-04-14)
+
+
+### Features
+
+* install.sh release guard with --dev bypass ([3be08c4](https://github.com/DAESA24/op-env/commit/3be08c477c5c3472f4080b8bab4102866831d948))
+* **install:** add release guard requiring --dev for untagged commits ([064c3fc](https://github.com/DAESA24/op-env/commit/064c3fcc95081ee6f207ba090aa9722b10242a7a))
+
 ## [0.4.2](https://github.com/DAESA24/op-env/compare/v0.4.1...v0.4.2) (2026-04-14)
 
 
