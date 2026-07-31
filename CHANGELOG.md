@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.0](https://github.com/DAESA24/op-env/compare/v0.6.0...v0.7.0) (2026-07-31)
+
+
+### Features
+
+* **scan:** detect key material by shape, not only by known value ([ae01427](https://github.com/DAESA24/op-env/commit/ae01427d39c0206e1bf543463706ddafef3d3559))
+* **scan:** detect key material by shape, not only by known value ([3b4f5b4](https://github.com/DAESA24/op-env/commit/3b4f5b4d2b3bb9dd07529a4e3c87f0bf3bc583c5)), closes [#39](https://github.com/DAESA24/op-env/issues/39)
+
 ## [0.6.0](https://github.com/DAESA24/op-env/compare/v0.5.0...v0.6.0) (2026-04-14)
 
 
