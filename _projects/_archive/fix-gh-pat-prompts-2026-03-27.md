@@ -1,7 +1,8 @@
 ---
 title: Fix GitHub CLI PAT Repeated Authorization Prompts
-status: planned
+status: complete
 created: 2026-03-27
+completed: 2026-04-14
 author: Daesa (PAI)
 priority: high
 scope: op-env gh CLI integration, .zshrc alias management
