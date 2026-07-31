@@ -98,10 +98,33 @@ for key in "${EXPECTED_KEYS[@]}"; do
   done
 done
 
+# Shape scan: key material the template cannot know about.
+# The value scan above only compares against secrets already managed in
+# 1Password, so it can only ever catch a re-leak of something already tracked.
+# A key that has never been in the template — an SSH identity, a service
+# keypair generated on first run, a PKCS#12 bundle — produces no comparison
+# and passes. These patterns catch that class by shape instead of by value.
+# Deliberately narrow: PEM armour, and filenames that are keys by convention.
+# Public counterparts (.pub) and bare .pem certificates are not matched.
+KEY_NAME_RE='(^|/)(id_rsa|id_dsa|id_ecdsa|id_ed25519|[^/]+\.(p12|pfx))$'
+KEY_CONTENT_RE='^-----BEGIN [A-Z0-9 ]*KEY-----'
+
+for file in "${STAGED_FILES[@]}"; do
+  if echo "$file" | grep -qE "$KEY_NAME_RE"; then
+    echo "BLOCKED: $file is a key file by naming convention" >&2
+    LEAK_COUNT=$((LEAK_COUNT + 1))
+    continue
+  fi
+  if git show ":${file}" 2>/dev/null | grep -qE "$KEY_CONTENT_RE"; then
+    echo "BLOCKED: $file contains PEM key armour" >&2
+    LEAK_COUNT=$((LEAK_COUNT + 1))
+  fi
+done
+
 if [ "$LEAK_COUNT" -gt 0 ]; then
   echo "op-env-scan: $LEAK_COUNT leak(s) detected. Commit blocked." >&2
   exit 1
 fi
 
-echo "op-env-scan: $SECRETS_CHECKED secrets checked against ${#STAGED_FILES[@]} staged files. No leaks found." >&2
+echo "op-env-scan: $SECRETS_CHECKED secrets checked against ${#STAGED_FILES[@]} staged files, plus key-shape scan. No leaks found." >&2
 exit 0

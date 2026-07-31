@@ -289,6 +289,44 @@ assert_contains "$stderr" "No leaks found" "Scan: reports no leaks"
 (cd "$SCAN_TMPDIR" && git reset -q HEAD -- clean.txt 2>/dev/null || true)
 rm -f "$SCAN_TMPDIR/clean.txt"
 
+# Key file by naming convention — exits 1 even though the value is not in the template
+echo "placeholder-not-a-real-key" > "$SCAN_TMPDIR/id_ed25519"
+(cd "$SCAN_TMPDIR" && git add id_ed25519)
+scan_exit=0
+stderr=$(cd "$SCAN_TMPDIR" && bash "$OP_ENV_SCAN" --tpl "$FIXTURES/test.tpl" 2>&1) || scan_exit=$?
+assert_eq "1" "$scan_exit" "Scan: key filename detected exits 1"
+assert_contains "$stderr" "naming convention" "Scan: reports naming-convention match"
+(cd "$SCAN_TMPDIR" && git reset -q HEAD -- id_ed25519 2>/dev/null || true)
+rm -f "$SCAN_TMPDIR/id_ed25519"
+
+# Public counterpart must NOT be flagged — the .pub suffix is safe to commit
+echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5 test@example" > "$SCAN_TMPDIR/id_ed25519.pub"
+(cd "$SCAN_TMPDIR" && git add id_ed25519.pub)
+stderr=$(cd "$SCAN_TMPDIR" && bash "$OP_ENV_SCAN" --tpl "$FIXTURES/test.tpl" 2>&1)
+scan_exit=$?
+assert_eq "0" "$scan_exit" "Scan: .pub counterpart is not flagged"
+(cd "$SCAN_TMPDIR" && git reset -q HEAD -- id_ed25519.pub 2>/dev/null || true)
+rm -f "$SCAN_TMPDIR/id_ed25519.pub"
+
+# PEM armour by content — filename is innocuous, content is not
+printf -- '-----BEGIN TESTING KEY-----\ncGxhY2Vob2xkZXI=\n-----END TESTING KEY-----\n' > "$SCAN_TMPDIR/blob.txt"
+(cd "$SCAN_TMPDIR" && git add blob.txt)
+scan_exit=0
+stderr=$(cd "$SCAN_TMPDIR" && bash "$OP_ENV_SCAN" --tpl "$FIXTURES/test.tpl" 2>&1) || scan_exit=$?
+assert_eq "1" "$scan_exit" "Scan: PEM armour detected exits 1"
+assert_contains "$stderr" "PEM key armour" "Scan: reports PEM armour match"
+(cd "$SCAN_TMPDIR" && git reset -q HEAD -- blob.txt 2>/dev/null || true)
+rm -f "$SCAN_TMPDIR/blob.txt"
+
+# PKCS#12 bundle by extension — exits 1
+echo "placeholder" > "$SCAN_TMPDIR/cert.p12"
+(cd "$SCAN_TMPDIR" && git add cert.p12)
+scan_exit=0
+stderr=$(cd "$SCAN_TMPDIR" && bash "$OP_ENV_SCAN" --tpl "$FIXTURES/test.tpl" 2>&1) || scan_exit=$?
+assert_eq "1" "$scan_exit" "Scan: .p12 bundle detected exits 1"
+(cd "$SCAN_TMPDIR" && git reset -q HEAD -- cert.p12 2>/dev/null || true)
+rm -f "$SCAN_TMPDIR/cert.p12"
+
 # --install-hook creates hook file (fresh repo, no existing hook)
 HOOK_TMPDIR=$(mktemp -d)
 (cd "$HOOK_TMPDIR" && git init -q)
